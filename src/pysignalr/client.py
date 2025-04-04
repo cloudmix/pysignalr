@@ -94,7 +94,7 @@ class SignalRClient:
         url (str): The URL of the SignalR server.
         protocol (Protocol): The protocol used for message encoding/decoding.
         headers (dict[str, str]): Optional HTTP headers to include in the WebSocket handshake.
-        access_token_factory (Callable[[], str] | None): A factory function to provide access tokens.
+        access_token_factory (Callable[[], Awaitable[str] | str] | None): A factory function to provide access tokens.
         _message_handlers (defaultdict[str, list[MessageCallback | None]]): Handlers for different message types.
         _stream_handlers (dict[str, tuple[MessageCallback | None, MessageCallback | None, CompletionMessageCallback | None]]): Handlers for stream messages.
         _invocation_handlers (dict[str, MessageCallback | None]): Handlers for invocation messages.
@@ -113,7 +113,7 @@ class SignalRClient:
         retry_sleep: float = DEFAULT_RETRY_SLEEP,
         retry_multiplier: float = DEFAULT_RETRY_MULTIPLIER,
         retry_count: int = DEFAULT_RETRY_COUNT,
-        access_token_factory: Callable[[], str] | None = None,
+        access_token_factory: Callable[[], Awaitable[str] | str] | None = None,
         ssl: ssl.SSLContext | None = None,
     ) -> None:
         self._url = url
