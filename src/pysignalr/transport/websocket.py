@@ -324,6 +324,15 @@ class WebsocketTransport(Transport):
         """
         negotiate_url = get_negotiate_url(self._url)
         _logger.info('Performing negotiation, URL: `%s`', negotiate_url)
+        access_token_factory = self._access_token_factory
+        if access_token_factory is None:
+            token = None
+        elif asyncio.iscoroutinefunction(access_token_factory):
+            token = await access_token_factory()
+        else:
+            token = access_token_factory()
+        if token:
+            self._headers['Authorization'] = f'Bearer {token}'
 
         session = ClientSession(
             timeout=ClientTimeout(connect=self._connection_timeout),
