@@ -298,9 +298,7 @@ class WebsocketTransport(Transport):
             conn (WebSocketClientProtocol): The WebSocket connection.
         """
         _logger.info('Sending handshake to server')
-        token = self._access_token_factory() if self._access_token_factory else None
-        if token:
-            self._headers['Authorization'] = f'Bearer {token}'
+        self.__set_auth_token()
         our_handshake = self._protocol.handshake_message()
         await conn.send(self._protocol.encode(our_handshake))
 
@@ -318,6 +316,7 @@ class WebsocketTransport(Transport):
         """
         negotiate_url = get_negotiate_url(self._url)
         _logger.info('Performing negotiation, URL: `%s`', negotiate_url)
+        self.__set_auth_token()
 
         session = ClientSession(
             timeout=ClientTimeout(connect=self._connection_timeout),
@@ -363,6 +362,11 @@ class WebsocketTransport(Transport):
             message (Message): The decoded message.
         """
         await self._callback(message)
+
+    def __set_auth_token(self) -> None:
+        if self._access_token_factory is not None:
+            token = self._access_token_factory()
+            self._headers['Authorization'] = f'Bearer {token}'
 
 
 class BaseWebsocketTransport(WebsocketTransport):
