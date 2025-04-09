@@ -71,7 +71,7 @@ class WebsocketTransport(Transport):
         retry_multiplier: float = DEFAULT_RETRY_MULTIPLIER,
         retry_count: int = DEFAULT_RETRY_COUNT,
         max_size: int | None = DEFAULT_MAX_SIZE,
-        access_token_factory: Callable[[], str] | None = None,
+        access_token_factory: Callable[[], Awaitable[str] | str] | None = None,
         ssl: ssl.SSLContext | None = None,
     ):
         """
@@ -86,7 +86,7 @@ class WebsocketTransport(Transport):
             ping_interval (int): The interval for sending ping messages to keep the connection alive.
             connection_timeout (int): The timeout for establishing a connection.
             max_size (int | None): The maximum size for incoming messages.
-            access_token_factory (Callable[[], str] | None): A factory function to provide access tokens.
+            access_token_factory (Callable[[], Awaitable[str] | str] | None): A factory function to provide access tokens.
         """
         super().__init__()
         self._url = url
@@ -298,9 +298,6 @@ class WebsocketTransport(Transport):
             conn (WebSocketClientProtocol): The WebSocket connection.
         """
         _logger.info('Sending handshake to server')
-        token = self._access_token_factory() if self._access_token_factory else None
-        if token:
-            self._headers['Authorization'] = f'Bearer {token}'
         our_handshake = self._protocol.handshake_message()
         await conn.send(self._protocol.encode(our_handshake))
 
@@ -318,6 +315,15 @@ class WebsocketTransport(Transport):
         """
         negotiate_url = get_negotiate_url(self._url)
         _logger.info('Performing negotiation, URL: `%s`', negotiate_url)
+        access_token_factory = self._access_token_factory
+        if access_token_factory is None:
+            token = None
+        elif asyncio.iscoroutinefunction(access_token_factory):
+            token = await access_token_factory()
+        else:
+            token = access_token_factory()
+        if token:
+            self._headers['Authorization'] = f'Bearer {token}'
 
         session = ClientSession(
             timeout=ClientTimeout(connect=self._connection_timeout),
