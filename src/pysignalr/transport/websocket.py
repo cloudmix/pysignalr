@@ -298,15 +298,6 @@ class WebsocketTransport(Transport):
             conn (WebSocketClientProtocol): The WebSocket connection.
         """
         _logger.info('Sending handshake to server')
-        access_token_factory = self._access_token_factory
-        if access_token_factory is None:
-            token = None
-        elif asyncio.iscoroutinefunction(access_token_factory):
-            token = await access_token_factory()
-        else:
-            token = access_token_factory()
-        if token:
-            self._headers['Authorization'] = f'Bearer {token}'
         our_handshake = self._protocol.handshake_message()
         await conn.send(self._protocol.encode(our_handshake))
 
